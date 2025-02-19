@@ -47,24 +47,25 @@ async def main():
 
             # Parse email using unstructured
             elements = partition_email(filename=f.name)
+
+        # Parsed email data
+        data = EmailData(
+            from_=elements[0].metadata.sent_from,
+            to=elements[0].metadata.sent_to,
+            subject=elements[0].metadata.subject,
+            date=elements[0].metadata.last_modified,
+            message_id=elements[0].metadata.email_message_id,
+            body="\n\n".join([str(el) for el in elements]),
+        )
+
+        # Publish parsed email data to NATS
+        await nc.publish(args.nats_subject, data.model_dump_json().encode())
+
     except Exception as e:
         # Publish error to NATS
         error = EmailParseError(sender=args.sender, date=str(datetime.now()), error=str(e))
         await nc.publish(args.nats_error_subject, error.model_dump_json().encode())
         return
-
-    # Parsed email data
-    data = EmailData(
-        from_=elements[0].metadata.sent_from,
-        to=elements[0].metadata.sent_to,
-        subject=elements[0].metadata.subject,
-        date=elements[0].metadata.last_modified,
-        message_id=elements[0].metadata.email_message_id,
-        body="\n\n".join([str(el) for el in elements]),
-    )
-
-    # Publish parsed email data to NATS
-    await nc.publish(args.nats_subject, data.model_dump_json().encode())
 
 if __name__ == '__main__':
     asyncio.run(main())
