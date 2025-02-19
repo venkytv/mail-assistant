@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "libmagic>=1.0",
+    "llm-mlx>=0.3",
+    "llm>=0.22",
     "nats-py>=2.9.0",
     "pydantic>=2.10.6",
     "pytesseract>=0.3.13",

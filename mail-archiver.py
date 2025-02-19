@@ -12,18 +12,7 @@ import sys
 from tempfile import NamedTemporaryFile
 from unstructured.partition.email import partition_email
 
-class EmailData(pydantic.BaseModel):
-    from_: list[str]
-    to: list[str]
-    subject: str
-    date: str
-    message_id: str
-    body: str
-
-class EmailParseError(pydantic.BaseModel):
-    sender: str
-    date: str
-    error: str
+from models import EmailData, EmailParseError
 
 async def main():
     parser = argparse.ArgumentParser(
