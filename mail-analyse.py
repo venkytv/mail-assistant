@@ -31,10 +31,12 @@ Analyse the email data and do one of the following:
 prompt_footer = """
 - Provide just the response without ABSOLUTELY NO ADDITIONAL COMMENTARY on the
   actions you took or justifications for the same.
+- Each response should be a single line.
 - Add a suffix of the format "(<email_id>, <date>)" to each response.
 - If the action or summary is important or urgent, add a prefix of "[IMP]" or
   "[URG]" respectively.
-- If the email is spam or irrelevant, add a prefix of "[SPAM]".
+- If the email is spam or irrelevant, add a prefix of "[SPAM]", but still include
+  a one-line summary of the email.
 """
 
 async def process(model, email) -> str:
