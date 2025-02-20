@@ -73,6 +73,9 @@ async def main():
                         help="NATS consumer name")
     parser.add_argument("--nats-subject", default="email.action",
                         help="NATS subject to publish actions to")
+    parser.add_argument("--nats-notification-subject",
+                        default="notifications.email.action",
+                        help="NATS subject to publish notifications to")
     parser.add_argument("--limit", type=int, default=50,
                         help="Number of messages to process (-1 for all)")
     parser.add_argument("--debug", action=argparse.BooleanOptionalAction,
@@ -117,6 +120,10 @@ async def main():
 
                 action = await process(model, email)
                 logger.info(action)
+
+                if "[IMP]" in action:
+                    logger.debug("Publishing action to %s", args.nats_notification_subject)
+                    await nc.publish(args.nats_notification_subject, action.encode())
 
                 logger.debug("Publishing action to %s", args.nats_subject)
                 await nc.publish(args.nats_subject, action.encode())
