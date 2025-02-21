@@ -65,7 +65,7 @@ server = imap.example.com
 username = my.username
 password = my.password
 mailboxes = ("INBOX",)
-use_peercert = True
+use_peek = true
 
 [destination]
 type = MDA_external
