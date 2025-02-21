@@ -121,7 +121,7 @@ async def main():
                 action = await process(model, email)
                 logger.info(action)
 
-                if "[IMP]" in action:
+                if any(prefix in action for prefix in ["[IMP]", "[URG]"]):
                     logger.debug("Publishing action to %s", args.nats_notification_subject)
                     await nc.publish(args.nats_notification_subject, action.encode())
 
