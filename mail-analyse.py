@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+from collections.abc import Callable
 from enum import Enum
 import json
 import llm
@@ -10,7 +11,7 @@ import pydantic
 import re
 import sys
 
-from models import EmailData
+from models import EmailData, Notification, Task
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +45,9 @@ prompt_footer = """
 """
 
 class DestinationType(str, Enum):
-    NOTIFICATION = "notification"
-    TASK = "task"
-    DEFAULT = "default"
+    NOTIFICATION = "Email Notification"
+    TASK = "Email Task"
+    DEFAULT = "Default"
 
 class Destination(pydantic.BaseModel):
     type: DestinationType
@@ -65,7 +66,7 @@ def get_destinations(action) -> list[Destination]:
         ))
 
     # Check if the action is important or urgent
-    if any(prefix in action for prefix in ["[IMP]", "[URG]"]):
+    if "[IMP]" in action or "[URG]" in action:
         destinations.append(
             Destination(
                 type=DestinationType.NOTIFICATION,
@@ -76,6 +77,7 @@ def get_destinations(action) -> list[Destination]:
         action = re.sub(r"^\[(?:IMP|URG)\]\s*", "", action)
 
     # Check if the action is a task
+    # Example: Task: [Due: 2021-09-30 12:00] Send the report (me@example.com, 2025-02-22T09:07:27+00:00)
     if action.startswith("Task:"):
         # Strip the "Task:" prefix
         action = re.sub(r"^Task:\s*", "", action)
@@ -87,6 +89,9 @@ def get_destinations(action) -> list[Destination]:
             action = match.group(2)
         else:
             due_date = ""
+
+        # Strip the trailing (from, date) suffix
+        action = re.sub(r"\s*\([^\)]+\)$", "", action)
 
         destinations.append(
             Destination(
@@ -112,6 +117,32 @@ async def process(model, email) -> str:
 
     response = model.prompt(prompt)
     return response.text()
+
+def destination_content(destination_subjects: dict[str, str]) -> Callable[[Destination], tuple[str, str]]:
+    """Return a closure that can be used to serialise a message for a destination"""
+    task_serialiser = lambda destination: Task(
+        action=destination.action,
+        due_date=destination.due_date).model_dump_json()
+    notification_serialiser = lambda destination: Notification(
+        title=destination.type.value,
+        message=destination.action).model_dump_json()
+    destination_map = {
+        DestinationType.NOTIFICATION: (
+            destination_subjects[DestinationType.NOTIFICATION],
+            notification_serialiser),
+        DestinationType.TASK: (
+            destination_subjects[DestinationType.TASK],
+            task_serialiser),
+        DestinationType.DEFAULT: (
+            destination_subjects[DestinationType.DEFAULT],
+            lambda x: x.action),
+    }
+
+    def serialise(destination) -> tuple[str, str]:
+        subject, serialiser = destination_map[destination.type]
+        return subject, serialiser(destination)
+
+    return serialise
 
 async def main():
     default_model = os.environ.get("MODEL",
@@ -157,16 +188,12 @@ async def main():
     psub = await js.pull_subscribe("", stream=args.nats_stream,
                                    durable=args.nats_consumer)
 
-    json_serialiser = lambda destination: json.dumps({
-        "action": destination.action,
-        "due_date": destination.due_date,
-    })
-
-    destination_map = {
-        DestinationType.NOTIFICATION: (args.nats_notification_subject, lambda x: x.action),
-        DestinationType.TASK: (args.nats_task_subject, json_serialiser),
-        DestinationType.DEFAULT: (args.nats_subject, lambda x: x.action),
+    destination_subjects = {
+        DestinationType.NOTIFICATION: args.nats_notification_subject,
+        DestinationType.TASK: args.nats_task_subject,
+        DestinationType.DEFAULT: args.nats_subject,
     }
+    content = destination_content(destination_subjects)
 
     count = args.limit
     while count > 0:
@@ -194,9 +221,9 @@ async def main():
 
                 destinations = get_destinations(action)
                 for destination in destinations:
-                    subject, serialiser = destination_map[destination.type]
+                    subject, body = content(destination)
                     logger.debug("Publishing action to %s", subject)
-                    await nc.publish(subject, serialiser(destination).encode())
+                    await nc.publish(subject, body)
 
         except nats.errors.TimeoutError:
             logger.debug("Timeout waiting for messages, exiting")

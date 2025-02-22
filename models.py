@@ -12,3 +12,11 @@ class EmailParseError(pydantic.BaseModel):
     sender: str
     date: str
     error: str
+
+class Task(pydantic.BaseModel):
+    action: str
+    due_date: str = ""
+
+class Notification(pydantic.BaseModel):
+    title: str
+    message: str
