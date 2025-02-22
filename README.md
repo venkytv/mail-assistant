@@ -36,6 +36,9 @@ publishing the result to a topic in NATS.
 - Optionally, create a stream for error messages
   - Stream name: `email_errors`
   - Subjects: `email.error`
+- If you want tasks to be stored, create a stream for tasks
+  - Stream name: `tasks`
+  - Subjects: `tasks.>`
 - If you want notifications to be stored, create a stream for notifications
   - Stream name: `notifications`
   - Subjects: `notifications.>`
@@ -122,6 +125,7 @@ You can customize the behavior of the script by using the following command-line
 * `--nats-stream`: Specify the NATS stream to subscribe to.
 * `--nats-consumer`: Specify the NATS consumer name.
 * `--nats-subject`: Specify the NATS subject to publish actions to.
+* `--nats-task-subject`: Specify the NATS subject to publish tasks to.
 * `--nats-notification-subject`: Specify the NATS subject to publish notifications to.
 * `--limit`: Specify the number of messages to process.
 * `--debug`: Enable debug logging.

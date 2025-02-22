@@ -1,10 +1,13 @@
 import argparse
 import asyncio
+from enum import Enum
+import json
 import llm
 import logging
 import nats
 import os
 import pydantic
+import re
 import sys
 
 from models import EmailData
@@ -21,7 +24,8 @@ logger.setLevel(logging.INFO)
 prompt_header = """
 Analyse the email data and do one of the following:
 1. Check if there is a something that needs to be done and generate a task for
-   it with a due date, if necessary. Prefix this with "Task: ".
+   it with a due date, if necessary. Prefix this with "Task: ". If there is a
+   due date, use the format "Task: [Due: <due_date_time>] <task>" instead.
 2. Check if there is a record of an expense and generate a report for it.
    Prefix this with "Expense: ".
 3. If neither of the above, generate a one-line summary of the email. Prefix
@@ -38,6 +42,60 @@ prompt_footer = """
 - If the email is spam or irrelevant, add a prefix of "[SPAM]", but still include
   a one-line summary of the email.
 """
+
+class DestinationType(str, Enum):
+    NOTIFICATION = "notification"
+    TASK = "task"
+    DEFAULT = "default"
+
+class Destination(pydantic.BaseModel):
+    type: DestinationType
+    action: str
+    due_date: str = ""
+
+# Determine the NATS destinations based on the action text
+def get_destinations(action) -> list[Destination]:
+    destinations = []
+
+    # Add default destination
+    destinations.append(
+        Destination(
+            type=DestinationType.DEFAULT,
+            action=action,
+        ))
+
+    # Check if the action is important or urgent
+    if any(prefix in action for prefix in ["[IMP]", "[URG]"]):
+        destinations.append(
+            Destination(
+                type=DestinationType.NOTIFICATION,
+                action=action,
+            ))
+
+        # Strip the "[IMP]" or "[URG]" prefix for subsequent processing
+        action = re.sub(r"^\[(?:IMP|URG)\]\s*", "", action)
+
+    # Check if the action is a task
+    if action.startswith("Task:"):
+        # Strip the "Task:" prefix
+        action = re.sub(r"^Task:\s*", "", action)
+
+        # Extract the due date, if present
+        match = re.match(r"^\[Due:\s*([^\]]+)\]\s*(.*)$", action)
+        if match:
+            due_date = match.group(1)
+            action = match.group(2)
+        else:
+            due_date = ""
+
+        destinations.append(
+            Destination(
+                type=DestinationType.TASK,
+                action=action,
+                due_date=due_date,
+            ))
+
+    return destinations
 
 async def process(model, email) -> str:
     prompt = f"""{prompt_header}
@@ -73,6 +131,8 @@ async def main():
                         help="NATS consumer name")
     parser.add_argument("--nats-subject", default="email.action",
                         help="NATS subject to publish actions to")
+    parser.add_argument("--nats-task-subject", default="tasks.email.action",
+                        help="NATS subject to publish tasks to")
     parser.add_argument("--nats-notification-subject",
                         default="notifications.email.action",
                         help="NATS subject to publish notifications to")
@@ -96,6 +156,17 @@ async def main():
     logger.debug("Subscribing to stream %s", args.nats_stream)
     psub = await js.pull_subscribe("", stream=args.nats_stream,
                                    durable=args.nats_consumer)
+
+    json_serialiser = lambda destination: json.dumps({
+        "action": destination.action,
+        "due_date": destination.due_date,
+    })
+
+    destination_map = {
+        DestinationType.NOTIFICATION: (args.nats_notification_subject, lambda x: x.action),
+        DestinationType.TASK: (args.nats_task_subject, json_serialiser),
+        DestinationType.DEFAULT: (args.nats_subject, lambda x: x.action),
+    }
 
     count = args.limit
     while count > 0:
@@ -121,12 +192,12 @@ async def main():
                 action = await process(model, email)
                 logger.info(action)
 
-                if any(prefix in action for prefix in ["[IMP]", "[URG]"]):
-                    logger.debug("Publishing action to %s", args.nats_notification_subject)
-                    await nc.publish(args.nats_notification_subject, action.encode())
+                destinations = get_destinations(action)
+                for destination in destinations:
+                    subject, serialiser = destination_map[destination.type]
+                    logger.debug("Publishing action to %s", subject)
+                    await nc.publish(subject, serialiser(destination).encode())
 
-                logger.debug("Publishing action to %s", args.nats_subject)
-                await nc.publish(args.nats_subject, action.encode())
         except nats.errors.TimeoutError:
             logger.debug("Timeout waiting for messages, exiting")
             break

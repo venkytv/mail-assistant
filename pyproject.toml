@@ -11,5 +11,6 @@ dependencies = [
     "nats-py>=2.9.0",
     "pydantic>=2.10.6",
     "pytesseract>=0.3.13",
+    "pytest>=8.3.4",
     "unstructured[image]>=0.16.21",
 ]
