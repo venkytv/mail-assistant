@@ -176,8 +176,14 @@ async def main():
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
+    async def error_handler(e):
+        logger.error("Error: %s", e)
+        sys.exit(1)
+
     logger.debug("Connecting to NATS server at %s", args.nats)
-    nc = await nats.connect(args.nats)
+    nc = await nats.connect(args.nats,
+                            error_cb=error_handler,
+                            disconnected_cb=error_handler)
     js = nc.jetstream()
 
     logger.debug("Loading model %s", args.model)
