@@ -69,18 +69,18 @@ def test_get_destinations():
     ]
 
 @pytest.mark.parametrize("destination_type, action, due_date, expected", [
-    (DestinationType.DEFAULT, "Default Test 1", "", "Default Test 1"),
-    (DestinationType.DEFAULT, "Default Test 2", "today", "Default Test 2"),
-    (DestinationType.DEFAULT, "[IMP] Default Test 3", "today", "[IMP] Default Test 3"),
+    (DestinationType.DEFAULT, "Default Test 1", "", b"Default Test 1"),
+    (DestinationType.DEFAULT, "Default Test 2", "today", b"Default Test 2"),
+    (DestinationType.DEFAULT, "[IMP] Default Test 3", "today", b"[IMP] Default Test 3"),
 
     (DestinationType.NOTIFICATION, "[IMP] Notification Test 1", "",
-        Notification(title="Email Notification", message="[IMP] Notification Test 1").model_dump_json()),
+        Notification(title="Email Notification", message="[IMP] Notification Test 1").model_dump_json().encode()),
     (DestinationType.NOTIFICATION, "[URG] Notification Test 2", "2025-02-22",
-        Notification(title="Email Notification", message="[URG] Notification Test 2").model_dump_json()),
+        Notification(title="Email Notification", message="[URG] Notification Test 2").model_dump_json().encode()),
 
-    (DestinationType.TASK, "Task Test 1", "", Task(action="Task Test 1").model_dump_json()),
+    (DestinationType.TASK, "Task Test 1", "", Task(action="Task Test 1").model_dump_json().encode()),
     (DestinationType.TASK, "Task Test 2", "2025-02-22",
-        Task(action="Task Test 2", due_date="2025-02-22").model_dump_json()),
+        Task(action="Task Test 2", due_date="2025-02-22").model_dump_json().encode()),
 ])
 def test_destination_content(destination_type, action, due_date, expected):
     subjects = {
