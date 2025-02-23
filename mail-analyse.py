@@ -140,7 +140,7 @@ def destination_content(destination_subjects: dict[str, str]) -> Callable[[Desti
 
     def serialise(destination) -> tuple[str, str]:
         subject, serialiser = destination_map[destination.type]
-        return subject, serialiser(destination)
+        return subject, serialiser(destination).encode()
 
     return serialise
 
@@ -222,7 +222,7 @@ async def main():
                 destinations = get_destinations(action)
                 for destination in destinations:
                     subject, body = content(destination)
-                    logger.debug("Publishing action to %s", subject)
+                    logger.debug("Publishing action to %s (%s)", subject, body)
                     await nc.publish(subject, body)
 
         except nats.errors.TimeoutError:
