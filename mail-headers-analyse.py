@@ -66,18 +66,17 @@ def get_destinations(action: EmailAction) -> list[Destination]:
     return destinations
 
 async def main():
-    default_model = os.environ.get("MODEL",
-                                   "mlx-community/Llama-3.2-3B-Instruct-4bit")
+    default_model = os.environ.get("REMOTE_MODEL", "4o-mini")
     default_nats = os.environ.get("NATS", "nats://localhost:4222")
 
     parser = argparse.ArgumentParser(
-        description="Analyse emails",
+        description="Analyse email headers",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--model", default=default_model,
-                        help="Model to use for analysis")
+                        help="Model to use for header analysis")
     parser.add_argument("--nats", default=default_nats,
                         help="NATS server URL")
-    parser.add_argument("--nats-stream", default="emails_for_analysis",
+    parser.add_argument("--nats-stream", default="emails",
                         help="NATS stream to subscribe to")
     parser.add_argument("--nats-consumer", default="email-analyser",
                         help="NATS consumer name")
@@ -88,6 +87,8 @@ async def main():
     parser.add_argument("--nats-notification-subject",
                         default="notifications.email.action",
                         help="NATS subject to publish notifications to")
+    parser.add_argument("--nats-email-analyse-subject", default="email.analyse",
+                        help="NATS subject to publish emails that need to be analysed")
     parser.add_argument("--limit", type=int, default=50,
                         help="Number of messages to process (-1 for all)")
     parser.add_argument("--debug", action=argparse.BooleanOptionalAction,
@@ -115,8 +116,7 @@ async def main():
                                    durable=args.nats_consumer)
 
     logging.debug(f"Creating mail analyser with model %s", args.model)
-    analyser = MailAnalyse(model=args.model, model_supports_schemas=False)
-    analyser.add_sample(sample_email_data, sample_email_action)
+    header_analyser = MailAnalyseHeaders(model=args.model)
 
     count = args.limit
     while count > 0:
@@ -141,26 +141,27 @@ async def main():
                     logging.error("Error validating email: %s: %s", e, raw_data)
                     continue
 
-                try:
-                    action = analyser.process(email)
-                    logging.info(action)
+                header_analysis = header_analyser.process(email)
+                logging.debug("Header analysis: %s", header_analysis)
 
-                    destinations = get_destinations(action)
-                    for destination in destinations:
-                        if destination.type == DestinationType.TASK:
-                            subject = args.nats_task_subject
-                            body = action.model_dump_json()
-                        elif destination.type == DestinationType.NOTIFICATION:
-                            subject = args.nats_notification_subject
-                            body = Notification(
-                                title=destination.type.value,
-                                message=destination.action).model_dump_json()
-
-                        logging.debug("Publishing action to %s (%s)", subject, body)
-                        await nc.publish(subject, body.encode())
-                except pydantic.ValidationError as e:
-                    logging.error("Error analysing email: %s: %s", e, email.model_dump_json())
+                # Check if we need to analyse the full email
+                if header_analysis.needs_analysis:
+                    logging.debug("Header analysis indicates further analysis needed")
+                    await nc.publish(args.nats_email_analyse_subject,
+                                     msg.data)
                     continue
+
+                # Check if we need to notify the user
+                if header_analysis.notify:
+                    logging.debug("Header analysis indicates notification needed")
+                    await nc.publish(args.nats_notification_subject,
+                                     msg.data)
+
+                # Check if we need to create a task
+                if header_analysis.is_important or header_analysis.is_transactional:
+                    logging.debug("Header analysis indicates task needed")
+                    await nc.publish(args.nats_task_subject,
+                                     msg.data)
 
         except nats.errors.TimeoutError:
             logging.debug("Timeout waiting for messages, exiting")

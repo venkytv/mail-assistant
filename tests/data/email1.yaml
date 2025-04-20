@@ -1,0 +1,14 @@
+email:
+  from_: [ someone@somwehere.com ]
+  to: [ me@here.com ]
+  subject: "[AINews] Gemini 2.5 Flash completes the total domination of the Pareto Frontier"
+  date: "2023-10-01T12:00:00+00:00"
+  message_id: msg1234567890
+  body: |
+    Gemini is all you need.
+
+header_analysis:
+  is_important: false
+  is_transactional: false
+  notify: false
+  needs_analysis: false

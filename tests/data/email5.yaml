@@ -1,0 +1,23 @@
+email:
+  from_: [ lrb@somwehere.com ]
+  to: [ me@here.com ]
+  subject: "New on the blog: Not Based on a True Story"
+  date: "2023-10-01T12:00:00+00:00"
+  message_id: msg1234567890
+  body: |
+    Not Based on a True Story
+    Jason Okundaye
+    ‘Adolescence has been compared to Mr Bates v. The Post Office, last year’s
+    ITV series that dramatised the Post Office Horizon scandal and provoked a
+    government response, with Rishi Sunak announcing legislation to exonerate
+    postmasters who had been wrongly convicted and offering thousands in
+    compensation. Government by television show is a depressing prospect. What
+    does it take to get any kind of action on long-standing issues in this
+    country? A compelling lead actor? A child plucked from obscurity giving the
+    performance of his life?’
+
+header_analysis:
+  is_important: false
+  is_transactional: false
+  notify: false
+  needs_analysis: false

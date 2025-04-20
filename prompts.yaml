@@ -1,0 +1,28 @@
+email_headers: |
+  You are an expert at analysing emails using header information. Your task
+  is to analyse the email headers and provide an assessment of the email
+  with the following information:
+    - Does the email look important, or more like spam or commercial email?
+    - Is the email informational or does it contain a call to action?
+    - Is the email body necessary to get more information about the
+      email? Assert this ONLY if it is not possible to determine the importance
+      of the email from the headers alone. This is an expensive operation and
+      should be avoided if possible. If it is reasonable certain the email is
+      informational, DO NOT ASSERT THAT MORE ANALYSIS IS NEEDED.
+      - If stating more analysis is needed, provide a reason why.
+
+  {samples}
+  {prompt_data}
+
+email_full: |
+  You are an expert at analysing emails. Your task is to analyse the email
+  and provide an assessment of the email with the following information:
+    - Is there a task that needs to be done? Does it have a deadline?
+    - Is the task urgent or important?
+
+  {samples}
+  {prompt_data}
+
+no_schema_instructions: |
+  - Provide just the JSON response with absolutely no commentary
+  - If any fields in the JSON response are empty, do not include them in the JSON response

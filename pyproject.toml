@@ -6,11 +6,13 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "libmagic>=1.0",
+    "llm-gemini>=0.18.1",
     "llm-mlx>=0.3",
     "llm>=0.22",
     "nats-py>=2.9.0",
     "pydantic>=2.10.6",
     "pytesseract>=0.3.13",
     "pytest>=8.3.4",
+    "pyyaml>=6.0.2",
     "unstructured[image]>=0.16.21",
 ]

@@ -1,0 +1,19 @@
+email:
+  from_: [ someone@somwehere.com ]
+  to: [ me@here.com ]
+  subject: "Your invoice from Apple."
+  date: "2023-10-01T12:00:00+00:00"
+  message_id: msg1234567890
+  body: |
+    Apple Account: ABC123
+    Invoice Number: 1234567890
+    Amount Due: $100.00
+    Due Date: 2023-10-15
+    Payment Method: Credit Card
+    Thank you for your purchase!
+
+header_analysis:
+  is_important: true
+  is_transactional: true
+  notify: false
+  needs_analysis: false
