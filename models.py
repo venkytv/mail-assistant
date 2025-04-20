@@ -21,6 +21,7 @@ class HeaderAnalysis(BaseModel):
                                default="")
     is_important: bool = Field(title="Is the email important?")
     is_transactional: bool = Field(title="Is the email transactional?")
+    due_date: str = Field(title="Optional due date for the action", default="")
     notify: bool = Field(title="Should the user be notified?")
     needs_analysis: bool = Field(title="Does the email need further analysis as header data is not sufficient?")
     analysis_reason: str = Field(title="Reason why further analysis is needed", default="")
