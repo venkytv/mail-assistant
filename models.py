@@ -40,7 +40,7 @@ class EmailAction(BaseModel):
 
     @field_validator("due_date", mode="before")
     @classmethod
-    def check_action(cls, value: Any) -> str:
+    def check_due_date(cls, value: Any) -> str:
         if not value:
             return ""
         return str(value)
