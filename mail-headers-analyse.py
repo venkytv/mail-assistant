@@ -89,6 +89,9 @@ async def main():
                         help="NATS subject to publish notifications to")
     parser.add_argument("--nats-email-analyse-subject", default="email.analyse",
                         help="NATS subject to publish emails that need to be analysed")
+    parser.add_argument("--nats-email-header-analysis-subject",
+                        default="email.header_analysis",
+                        help="NATS subject to publish email header analysis results")
     parser.add_argument("--limit", type=int, default=50,
                         help="Number of messages to process (-1 for all)")
     parser.add_argument("--debug", action=argparse.BooleanOptionalAction,
@@ -142,11 +145,16 @@ async def main():
                     continue
 
                 header_analysis = header_analyser.process(email)
-                logging.debug("Header analysis: %s", header_analysis)
+                logging.info("Header analysis: %s", header_analysis)
+                header_analysis_data = header_analysis.model_dump_json().encode()
+
+                # Publish the header analysis result
+                await nc.publish(args.nats_email_header_analysis_subject,
+                                 header_analysis_data)
 
                 # Check if we need to analyse the full email
                 if header_analysis.needs_analysis:
-                    logging.debug("Header analysis indicates further analysis needed")
+                    logging.info(f"Further analysis needed: {header_analysis.analysis_reason}")
                     await nc.publish(args.nats_email_analyse_subject,
                                      msg.data)
                     continue
@@ -155,13 +163,13 @@ async def main():
                 if header_analysis.notify:
                     logging.debug("Header analysis indicates notification needed")
                     await nc.publish(args.nats_notification_subject,
-                                     msg.data)
+                                     header_analysis_data)
 
                 # Check if we need to create a task
                 if header_analysis.is_important or header_analysis.is_transactional:
                     logging.debug("Header analysis indicates task needed")
                     await nc.publish(args.nats_task_subject,
-                                     msg.data)
+                                     header_analysis_data)
 
         except nats.errors.TimeoutError:
             logging.debug("Timeout waiting for messages, exiting")
