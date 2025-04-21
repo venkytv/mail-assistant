@@ -132,9 +132,6 @@ async def main():
                 break
 
             for msg in msgs:
-                if not args.debug_skip_ack:
-                    await msg.ack()
-
                 raw_data = msg.data.decode()
                 logging.debug("Received message: %s", raw_data)
 
@@ -147,6 +144,9 @@ async def main():
                 header_analysis = header_analyser.process(email)
                 logging.info("Header analysis: %s", header_analysis)
                 header_analysis_data = header_analysis.model_dump_json().encode()
+
+                if not args.debug_skip_ack:
+                    await msg.ack()
 
                 # Publish the header analysis result
                 await nc.publish(args.nats_email_header_analysis_subject,
