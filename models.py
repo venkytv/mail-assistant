@@ -1,6 +1,7 @@
+import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, ValidationError, field_validator
-from typing import Any
+from typing import Any, Optional
 
 class EmailData(BaseModel):
     from_: list[str] = Field(serialization_alias="from")
@@ -21,14 +22,21 @@ class HeaderAnalysis(BaseModel):
                                default="")
     is_important: bool = Field(title="Is the email important?")
     is_transactional: bool = Field(title="Is the email transactional?")
-    due_date: str = Field(title="Optional due date for the action", default="")
+    due_date: Optional[datetime.date] = Field(title="Optional due date for the action in YYYY-MM-DD format", default=None)
     notify: bool = Field(title="Should the user be notified?")
     needs_analysis: bool = Field(title="Does the email need further analysis as header data is not sufficient?")
     analysis_reason: str = Field(title="Reason why further analysis is needed", default="")
 
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def check_due_date(cls, value: Any) -> str:
+        if not value:
+            return None
+        return str(value)
+
 class EmailAction(BaseModel):
     action: str = Field(title="Action to be taken on the email", default="")
-    due_date: str = Field(title="Optional due date for the action", default="")
+    due_date: Optional[datetime.date] = Field(title="Optional due date for the action in YYYY-MM-DD format", default=None)
     is_important: bool = Field(title="Is the email important?", default=False)
     notify: bool = Field(title="Should the user be notified?", default=False)
 
@@ -43,7 +51,7 @@ class EmailAction(BaseModel):
     @classmethod
     def check_due_date(cls, value: Any) -> str:
         if not value:
-            return ""
+            return None
         return str(value)
 
 class Task(BaseModel):
