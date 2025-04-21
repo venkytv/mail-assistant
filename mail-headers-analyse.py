@@ -162,14 +162,31 @@ async def main():
                 # Check if we need to notify the user
                 if header_analysis.notify:
                     logging.debug("Header analysis indicates notification needed")
+                    message = ""
+                    if header_analysis.is_important:
+                        message = "Important email"
+                    elif header_analysis.is_transactional:
+                        message = "Transactional email"
+                    else:
+                        message = "Email"
+                    if header_analysis.due_date:
+                        message += f" with due date {header_analysis.due_date}"
+                    notification = Notification(
+                        title=header_analysis.clean_subject,
+                        message=message,
+                    )
                     await nc.publish(args.nats_notification_subject,
-                                     header_analysis_data)
+                                     notification.model_dump_json().encode())
 
                 # Check if we need to create a task
                 if header_analysis.is_important or header_analysis.is_transactional:
                     logging.debug("Header analysis indicates task needed")
+                    task = Task(
+                        action=header_analysis.clean_subject,
+                        due_date=header_analysis.due_date,
+                    )
                     await nc.publish(args.nats_task_subject,
-                                     header_analysis_data)
+                                     task.model_dump_json().encode())
 
         except nats.errors.TimeoutError:
             logging.debug("Timeout waiting for messages, exiting")
