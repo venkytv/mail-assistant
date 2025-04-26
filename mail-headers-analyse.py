@@ -160,15 +160,9 @@ async def main():
                 # Check if we need to notify the user
                 if header_analysis.notify:
                     logging.debug("Header analysis indicates notification needed")
-                    message = ""
-                    if header_analysis.is_important:
-                        message = "Important email"
-                    elif header_analysis.has_task:
-                        message = "Transactional email"
-                    else:
-                        message = "Email"
+                    message = header_analysis.summary
                     if header_analysis.due_date:
-                        message += f" with due date {header_analysis.due_date}"
+                        message += f" (due date {header_analysis.due_date})"
                     notification = Notification(
                         title=header_analysis.clean_subject,
                         message=message,
