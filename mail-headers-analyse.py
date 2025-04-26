@@ -82,6 +82,8 @@ async def main():
                         help="NATS consumer name")
     parser.add_argument("--nats-subject", default="email.action",
                         help="NATS subject to publish actions to")
+    parser.add_argument("--nats-backup-subject", default="email.backup",
+                        help="NATS subject to publish email backups to")
     parser.add_argument("--nats-task-subject", default="tasks.email.action",
                         help="NATS subject to publish tasks to")
     parser.add_argument("--nats-notification-subject",
@@ -147,6 +149,9 @@ async def main():
 
                 if not args.debug_skip_ack:
                     await msg.ack()
+
+                # Publish the email data to the backup subject
+                await nc.publish(args.nats_backup_subject, msg.data)
 
                 # Publish the header analysis result
                 await nc.publish(args.nats_email_header_analysis_subject,
