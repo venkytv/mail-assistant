@@ -7,8 +7,10 @@ email_cloud: |
     - Is the email informational or does it contain a call to action?
     - Is there a task that needs to be done? Does it have a deadline?
       Ignore tasks from unimportant emails. Make a best effort to estimate
-      the deadline if it is not explicitly stated but the email implies a
-      deadline.
+      the deadline if it is not explicitly stated but the email is important
+      and implies a deadline.
+    - Is the email about a delivery or a shipment? If so, do add the delivery
+      date as the deadline.
 
   Sample email data:
   {samples}
