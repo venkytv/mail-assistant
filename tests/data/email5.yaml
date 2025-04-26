@@ -18,6 +18,5 @@ email:
 
 header_analysis:
   is_important: false
-  is_transactional: false
+  has_task: false
   notify: false
-  needs_analysis: false

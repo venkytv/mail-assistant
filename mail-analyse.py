@@ -14,7 +14,7 @@ import sys
 from typing import Any
 import yaml
 
-from mail_analysis import MailAnalyse, MailAnalyseHeaders
+from mail_analysis import MailAnalyse, MailAnalyseCloud
 from models import EmailData, HeaderAnalysis, EmailAction, Notification, Task
 
 sample_email_data = EmailData(

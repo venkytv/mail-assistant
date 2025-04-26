@@ -72,28 +72,28 @@ class MailAnalyserBase(abc.ABC):
 
         return response
 
-class MailAnalyseHeaders(MailAnalyserBase):
-    """Analyse mail using only email headers"""
+class MailAnalyseCloud(MailAnalyserBase):
+    """Analyse mail using cloud LLM"""
 
     def __init__(self, model, model_supports_schemas=True):
         super().__init__(
             model=model,
-            prompt_tag="email_headers",
+            prompt_tag="email_cloud",
             response_schema=HeaderAnalysis,
             model_supports_schemas=model_supports_schemas,
         )
 
     def prompt_data(self, email: EmailData) -> str:
-        """Generate the prompt data for the email headers"""
-        return email.model_dump_json(exclude={"body"})
+        """Generate the prompt data"""
+        return email.model_dump_json()
 
 class MailAnalyse(MailAnalyserBase):
-    """Analyse mail using the full email data"""
+    """Analyse mail locally using the full email data"""
 
     def __init__(self, model, model_supports_schemas=True):
         super().__init__(
             model=model,
-            prompt_tag="email_full",
+            prompt_tag="email_local",
             response_schema=EmailAction,
             model_supports_schemas=model_supports_schemas,
         )

@@ -9,6 +9,5 @@ email:
 
 header_analysis:
   is_important: true
-  is_transactional: true
+  has_task: false
   notify: true
-  needs_analysis: false

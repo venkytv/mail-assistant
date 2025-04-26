@@ -1,20 +1,22 @@
-email_headers: |
-  You are an expert at analysing emails using header information. Your task
-  is to analyse the email headers and provide an assessment of the email
-  with the following information:
+email_cloud: |
+  You are an expert at analysing emails. Your task is to analyse the provided
+  email and provide an assessment with the following information:
     - Does the email look important, or more like spam or commercial email?
+      Only flag the email as important if truly is. If unsure, err
+      on the side of caution and do not flag it as important.
     - Is the email informational or does it contain a call to action?
-    - Is the email body necessary to get more information about the
-      email? Assert this ONLY if it is not possible to determine the importance
-      of the email from the headers alone. This is an expensive operation and
-      should be avoided if possible. If it is reasonable certain the email is
-      informational, DO NOT ASSERT THAT MORE ANALYSIS IS NEEDED.
-      - If stating more analysis is needed, provide a reason why.
+    - Is there a task that needs to be done? Does it have a deadline?
+      Ignore tasks from unimportant emails. Make a best effort to estimate
+      the deadline if it is not explicitly stated but the email implies a
+      deadline.
 
+  Sample email data:
   {samples}
+
+  Email to analyse:
   {prompt_data}
 
-email_full: |
+email_local: |
   You are an expert at analysing emails. Your task is to analyse the email
   and provide an assessment of the email with the following information:
     - Is there a task that needs to be done? Does it have a deadline?

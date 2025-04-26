@@ -14,12 +14,11 @@ def test_mail_analyse(test_case):
     test_name, test_data = test_case
     email_data, expected_analysis, _ = test_data
 
-    m = mail_analyse.MailAnalyseHeaders(model="4o-mini")
+    m = mail_analyse.MailAnalyseCloud(model="4o-mini")
     response = m.process(email_data)
     assert isinstance(response, HeaderAnalysis), test_name
     assert response.is_important == expected_analysis.is_important, test_name
-    assert response.is_transactional == expected_analysis.is_transactional, test_name
-    assert response.needs_analysis == expected_analysis.needs_analysis, f"{test_name} - {response.analysis_reason}"
+    assert response.has_task == expected_analysis.has_task, test_name
 
 @pytest.mark.llm
 @pytest.mark.parametrize("test_case", get_test_cases_for_analysis().items())

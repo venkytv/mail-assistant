@@ -13,11 +13,9 @@ def test_due_date(due_date, expected):
     header_analysis = HeaderAnalysis(
         clean_subject="Test Subject",
         is_important=True,
-        is_transactional=False,
+        has_task=False,
         due_date=due_date,
         notify=True,
-        needs_analysis=False,
-        analysis_reason=""
     )
 
     # Assert that the due_date is as expected
@@ -35,9 +33,7 @@ def test_due_date_invalid(due_date, exception):
         header_analysis = HeaderAnalysis(
             clean_subject="Test Subject",
             is_important=True,
-            is_transactional=False,
+            has_task=False,
             due_date=due_date,
             notify=True,
-            needs_analysis=False,
-            analysis_reason=""
         )

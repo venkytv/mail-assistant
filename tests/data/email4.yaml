@@ -11,9 +11,9 @@ email:
 
 header_analysis:
   is_important: true
-  is_transactional: false
+  has_task: true
+  due_date: "2025-04-16"
   notify: true
-  needs_analysis: false
 
 action:
   action: "Take action"

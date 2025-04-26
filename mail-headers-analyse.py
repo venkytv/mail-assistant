@@ -14,7 +14,7 @@ import sys
 from typing import Any
 import yaml
 
-from mail_analysis import MailAnalyse, MailAnalyseHeaders
+from mail_analysis import MailAnalyse, MailAnalyseCloud
 from models import EmailData, HeaderAnalysis, EmailAction, Notification, Task
 
 sample_email_data = EmailData(
@@ -119,7 +119,7 @@ async def main():
                                    durable=args.nats_consumer)
 
     logging.debug(f"Creating mail analyser with model %s", args.model)
-    header_analyser = MailAnalyseHeaders(model=args.model)
+    header_analyser = MailAnalyseCloud(model=args.model)
 
     count = args.limit
     while count > 0:
@@ -152,20 +152,13 @@ async def main():
                 await nc.publish(args.nats_email_header_analysis_subject,
                                  header_analysis_data)
 
-                # Check if we need to analyse the full email
-                if header_analysis.needs_analysis:
-                    logging.info(f"Further analysis needed: {header_analysis.analysis_reason}")
-                    await nc.publish(args.nats_email_analyse_subject,
-                                     msg.data)
-                    continue
-
                 # Check if we need to notify the user
                 if header_analysis.notify:
                     logging.debug("Header analysis indicates notification needed")
                     message = ""
                     if header_analysis.is_important:
                         message = "Important email"
-                    elif header_analysis.is_transactional:
+                    elif header_analysis.has_task:
                         message = "Transactional email"
                     else:
                         message = "Email"
@@ -179,7 +172,7 @@ async def main():
                                      notification.model_dump_json().encode())
 
                 # Check if we need to create a task
-                if header_analysis.is_important or header_analysis.is_transactional:
+                if header_analysis.is_important or header_analysis.has_task:
                     logging.debug("Header analysis indicates task needed")
                     task = Task(
                         action=header_analysis.clean_subject,

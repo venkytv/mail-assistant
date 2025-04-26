@@ -1,7 +1,10 @@
 import datetime
 from enum import Enum
+import logging
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 class EmailData(BaseModel):
     from_: list[str] = Field(serialization_alias="from")
@@ -20,16 +23,16 @@ class HeaderAnalysis(BaseModel):
     clean_subject: str = Field(title="Cleaned subject line",
                                description="Subject line with tone being direct and professional conveying essential information concisely",
                                default="")
+    summary: str = Field(title="A one-line summary of the email", default=""),
     is_important: bool = Field(title="Is the email important?")
-    is_transactional: bool = Field(title="Is the email transactional?")
-    due_date: Optional[datetime.date] = Field(title="Optional due date for the action in YYYY-MM-DD format", default=None)
+    has_task: bool = Field(title="Does the email contain a task?")
+    due_date: Optional[datetime.date] = Field(title="Optional due date for the task in YYYY-MM-DD format", default=None)
     notify: bool = Field(title="Should the user be notified?")
-    needs_analysis: bool = Field(title="Does the email need further analysis as header data is not sufficient?")
-    analysis_reason: str = Field(title="Reason why further analysis is needed", default="")
 
     @field_validator("due_date", mode="before")
     @classmethod
     def check_due_date(cls, value: Any) -> str:
+        logger.debug(f"Checking header analysis due date: {value}")
         if not value:
             return None
         return str(value)
@@ -43,6 +46,7 @@ class EmailAction(BaseModel):
     @field_validator("action", mode="before")
     @classmethod
     def check_action(cls, value: Any) -> str:
+        logger.debug(f"Checking email action: {value}")
         if not value:
             return ""
         return str(value)
@@ -50,6 +54,7 @@ class EmailAction(BaseModel):
     @field_validator("due_date", mode="before")
     @classmethod
     def check_due_date(cls, value: Any) -> str:
+        logger.debug(f"Checking email action due date: {value}")
         if not value:
             return None
         return str(value)
@@ -57,6 +62,12 @@ class EmailAction(BaseModel):
 class Task(BaseModel):
     action: str
     due_date: str = ""
+
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def check_due_date(cls, value: Any) -> str:
+        logger.debug(f"Validating task due date: {value}")
+        return str(value)
 
 class Notification(BaseModel):
     title: str
