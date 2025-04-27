@@ -144,6 +144,7 @@ async def main():
                     continue
 
                 header_analysis = header_analyser.process(email)
+                header_analysis.message_id = email.message_id
                 logging.info("Header analysis: %s", header_analysis)
                 header_analysis_data = header_analysis.model_dump_json().encode()
 
