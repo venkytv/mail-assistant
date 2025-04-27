@@ -11,6 +11,11 @@ email_cloud: |
       and implies a deadline.
     - Is the email about a delivery or a shipment? If so, do add the delivery
       date as the deadline.
+    - Some specific rules
+      - If the email is soliciting feedback, do not flag it as important or add
+        a deadline.
+      - If the email is a newsletter, do not flag it as important or add 
+        a deadline.
 
   Sample email data:
   {samples}
