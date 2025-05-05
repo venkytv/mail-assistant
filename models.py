@@ -24,6 +24,8 @@ class HeaderAnalysis(BaseModel):
                                description="Subject line with tone being direct and professional conveying essential information concisely",
                                default="")
     message_id: str = Field(title="Message ID", default="", description="Ignore this field")
+    message_from: str = Field(title="Sender details", default="",
+                              description="Sender name in human-friendly format, with email address being a last resort")
     summary: str = Field(title="A one-line summary of the email", default=""),
     is_important: bool = Field(title="Is the email important?")
     has_task: bool = Field(title="Does the email contain a task?")
